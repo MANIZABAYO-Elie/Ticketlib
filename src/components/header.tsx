@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { IoIosNotifications } from "react-icons/io";
+import { FaUser } from "react-icons/fa";
 
 // Define the structure for a navigation link
 interface NavLink {
   name: string;
-  path: string; 
+  path: string;
+  icon?: React.ReactNode;
 }
 
 // Define the props for the Header component
@@ -66,19 +69,40 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
-              {navLinks.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => handleNavClick(link.path)}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-600 hover:text-white transition duration-300"
-                >
-                  {link.name}
-                </button>
-              ))}
+          <div className="hidden md:flex justify-between items-center flex-1 ml-10">
+            <nav>
+              <div className="flex space-x-4">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    onClick={() => handleNavClick(link.path)}
+                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-600 hover:text-white transition duration-300"
+                  >
+                    {link.icon}
+                    {link.name}
+                  </button>
+                ))}
+              </div>
+            </nav>
+            
+            {/* User Actions */}
+            <div className="flex items-center space-x-4">
+              {/* Notifications */}
+              <button className="p-2 text-white hover:text-blue-200 transition duration-300">
+                 <IoIosNotifications className="w-4 h-4"/>
+              </button>
+              
+              {/* User Avatar */}
+              <button className="p-2 text-white hover:text-blue-200 transition duration-300">
+                <FaUser className="w-4 h-4"/>
+              </button>
+              
+              {/* Sign In Button */}
+              <button className="bg-white text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-100 transition duration-300">
+                Sign In
+              </button>
             </div>
-          </nav>
+          </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
@@ -145,8 +169,9 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
             <button
               key={link.name}
               onClick={() => handleNavClick(link.path)}
-              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-700 transition duration-300"
+              className="flex items-center w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-700 transition duration-300"
             >
+              {link.icon}
               {link.name}
             </button>
           ))}
