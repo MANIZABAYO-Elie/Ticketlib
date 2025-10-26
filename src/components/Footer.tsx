@@ -84,7 +84,7 @@ const Footer: React.FC = () => {
             <li>
               <span className="block text-gray-400">Email</span>
               <Link to="/contact" className="hover:text-white transition-colors">
-                support@ticqet.rw
+                support@ticketlib.rw
               </Link>
             </li>
             <li>
@@ -136,7 +136,7 @@ const Footer: React.FC = () => {
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-400">
           <p>
-            © {new Date().getFullYear()} TicQet. All rights reserved. Delivering Tomorrow's Solutions Today.
+            © {new Date().getFullYear()} ticketlib. All rights reserved. Delivering Tomorrow's Solutions Today.
           </p>
           <div className="flex gap-6 mt-3 sm:mt-0">
             <Link to="/privacy" className="hover:text-white transition-colors">

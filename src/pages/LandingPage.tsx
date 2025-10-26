@@ -1,12 +1,15 @@
 import React from "react";
 import Header from "../components/header"; 
-import HeroSection from "../components/HeroSection";
+//import HeroSection from "../components/HeroSection";
 import { BsTicket } from "react-icons/bs";
 import { BsCalendar2Event } from "react-icons/bs";
 import { FaCompass } from "react-icons/fa";
 import { LuMessageCircleMore } from "react-icons/lu";
 import { MainEventDisplay, VenueCard } from "../components/MainEventDisplay";
 import Footer from "../components/Footer";
+import bkArenaImage from "../assets/images/bk-arena.png";
+import conventionCenterImage from "../assets/images/convention-center.png";
+import intareArenaImage from "../assets/images/INTARE-ARENA.png";
 
 
 const LandingPage: React.FC = () => {
@@ -43,8 +46,8 @@ const LandingPage: React.FC = () => {
       <Header brandName="TicketLIB" navLinks={navLinks} />
 
       {/* Main Content */}
-       <HeroSection/>
-       <div className="flex gap-6 p-6">
+       {/* <HeroSection/> */}
+       <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6">
          <div className="flex-1">
            <MainEventDisplay event={{
              title: 'NIWE HEALING CONCERT',
@@ -61,33 +64,33 @@ const LandingPage: React.FC = () => {
              image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800'
            }}/>
          </div>
-         <div className="w-1/2">
-           <div className="grid grid-cols-2 gap-4">
+         <div className="w-full lg:w-1/2">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <VenueCard venue={{
                name: 'Kigali Convention Centre',
-               image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800',
+               image: conventionCenterImage,
                count: 25,
                type: 'Events'
              }}/>
              <VenueCard venue={{
                name: 'BK Arena',
-               image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
+               image: bkArenaImage,
                count: 18,
                type: 'Events'
              }}/>
              <VenueCard venue={{
                name: 'Intare Arena',
-               image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+               image: intareArenaImage,
                count: 12,
                type: 'Activities'
              }}/>
              <VenueCard venue={{
                name: 'Camp Kigali',
-               image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800',
+               image: bkArenaImage,
                count: 8,
                type: 'Events'
              }}/>
-           </div>
+           </div>  
          </div>
        </div>
 

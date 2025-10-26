@@ -58,11 +58,11 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
 
   return (
     <header className="bg-gradient-to-r from-blue-800 to-blue-500 shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
+        <div className="flex items-center h-20">
           {/* Brand/Logo Section */}
           <div
-            className="flex-shrink-0 cursor-pointer text-2xl font-bold text-white tracking-wider hover:text-blue-200 transition duration-300"
+            className="cursor-pointer text-4xl font-bold text-white tracking-wider hover:text-blue-200 transition duration-300"
             onClick={() => handleNavClick("/")}
           >
             {brandName}
@@ -76,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
                   <button
                     key={link.name}
                     onClick={() => handleNavClick(link.path)}
-                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-blue-600 hover:text-white transition duration-300"
+                    className="flex items-center px-3 py-2 rounded-md text-lg font-medium text-white hover:bg-blue-600 hover:text-white transition duration-300"
                   >
                     {link.icon}
                     {link.name}
@@ -89,23 +89,23 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
             <div className="flex items-center space-x-4">
               {/* Notifications */}
               <button className="p-2 text-white hover:text-blue-200 transition duration-300">
-                 <IoIosNotifications className="w-4 h-4"/>
+                 <IoIosNotifications className="w-7 h-7"/>
               </button>
               
               {/* User Avatar */}
               <button className="p-2 text-white hover:text-blue-200 transition duration-300">
-                <FaUser className="w-4 h-4"/>
+                <FaUser className="w-6 h-6"/>
               </button>
               
               {/* Sign In Button */}
-              <button className="bg-white text-blue-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-100 transition duration-300">
+              <button className="bg-white text-blue-700 px-4 py-2 rounded-md text-lg font-medium hover:bg-blue-100 transition duration-300">
                 Sign In
               </button>
             </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden ml-auto">
             <button
               ref={buttonRef}
               type="button"
@@ -118,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
               {mobileOpen ? (
                 // Close (X) Icon
                 <svg
-                  className="h-6 w-6"
+                  className="h-7 w-7"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -135,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
               ) : (
                 // Hamburger Icon
                 <svg
-                  className="h-6 w-6"
+                  className="h-7 w-7"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -169,7 +169,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
             <button
               key={link.name}
               onClick={() => handleNavClick(link.path)}
-              className="flex items-center w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-700 transition duration-300"
+              className="flex items-center w-full text-left px-3 py-2 rounded-md text-xl font-medium text-white hover:bg-blue-700 transition duration-300"
             >
               {link.icon}
               {link.name}
