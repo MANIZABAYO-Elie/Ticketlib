@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoIosNotifications } from "react-icons/io";
 import { FaUser } from "react-icons/fa";
 
@@ -8,6 +8,7 @@ interface NavLink {
   name: string;
   path: string;
   icon?: React.ReactNode;
+  onClick?: () => void;
 }
 
 // Define the props for the Header component
@@ -51,8 +52,12 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
     };
   }, [mobileOpen]);
 
-  const handleNavClick = (path: string) => {
-    navigate(path);
+  const handleNavClick = (link: NavLink) => {
+    if (link.onClick) {
+      link.onClick();
+    } else if (link.path) {
+      navigate(link.path);
+    }
     setMobileOpen(false);
   };
 
@@ -63,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
           {/* Brand/Logo Section */}
           <div
             className="cursor-pointer text-4xl font-bold text-white tracking-wider hover:text-blue-200 transition duration-300"
-            onClick={() => handleNavClick("/")}
+            onClick={() => navigate("/")}
           >
             {brandName}
           </div>
@@ -75,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
                 {navLinks.map((link) => (
                   <button
                     key={link.name}
-                    onClick={() => handleNavClick(link.path)}
+                    onClick={() => handleNavClick(link)}
                     className="flex items-center px-3 py-2 rounded-md text-lg font-medium text-white hover:bg-blue-600 hover:text-white transition duration-300"
                   >
                     {link.icon}
@@ -98,9 +103,12 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
               </button>
               
               {/* Sign In Button */}
-              <button className="bg-white text-blue-700 px-4 py-2 rounded-md text-lg font-medium hover:bg-blue-100 transition duration-300">
-                Sign In
-              </button>
+              <Link to={'/signIn'}>
+                    <button className="bg-white text-blue-700 px-4 py-2 rounded-md text-lg font-medium hover:bg-blue-100 transition duration-300">
+                      Sign In
+                   </button>
+              </Link>
+              
             </div>
           </div>
 
@@ -168,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ brandName, navLinks }) => {
           {navLinks.map((link) => (
             <button
               key={link.name}
-              onClick={() => handleNavClick(link.path)}
+              onClick={() => handleNavClick(link)}
               className="flex items-center w-full text-left px-3 py-2 rounded-md text-xl font-medium text-white hover:bg-blue-700 transition duration-300"
             >
               {link.icon}

@@ -10,6 +10,7 @@ import Footer from "../components/Footer";
 import bkArenaImage from "../assets/images/bk-arena.png";
 import conventionCenterImage from "../assets/images/convention-center.png";
 import intareArenaImage from "../assets/images/INTARE-ARENA.png";
+import SearchBarWithIcons from "../components/SearchBarWithIcons";
 
 
 const LandingPage: React.FC = () => {
@@ -18,24 +19,24 @@ const LandingPage: React.FC = () => {
     { 
       name: "Events", 
       path: "/", 
-      icon:<BsCalendar2Event className="w-4 h-4 mr-2"/>
+      icon:<BsCalendar2Event className="w-6 h-6 mr-3"/>
     },
     { 
       name: "Tickets", 
       path: "/", 
-      icon:<BsTicket className="w-4 h-4 mr-2"/>
+      icon:<BsTicket className="w-6 h-6 mr-3"/>
     },
     
     { 
       name: "Discover", 
       path: "", 
-      icon:<FaCompass className="w-4 h-4 mr-2"/>
+      icon:<FaCompass className="w-6 h-6 mr-3"/>
     
     },
     { 
       name: "Contact us", 
       path: "/contact", 
-      icon:<LuMessageCircleMore className="w-4 h-4 mr-2"/>
+      icon:<LuMessageCircleMore className="w-6 h-6 mr-3"/>
     
     },
   ];
@@ -44,6 +45,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <Header brandName="TicketLIB" navLinks={navLinks} />
+      <SearchBarWithIcons/>
 
       {/* Main Content */}
        {/* <HeroSection/> */}
