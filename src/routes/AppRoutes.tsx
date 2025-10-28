@@ -10,6 +10,7 @@ import DiscoverEventsPage from "../pages/DiscoverEventPage";
 import TicketProceed from "../pages/TicketProceed";
 import PaymentConfirmation from "../pages/PaymentConfirmation";
 import TermsAndConditions from "../pages/TermsAndConditions";
+import SuperAdminDashboard from "../pages/SuperAdminDashboard";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const AppRoutes: React.FC = () => {
          <Route path="/ticket-proceed" element={<TicketProceed/>} />
          <Route path="/payment" element={<PaymentConfirmation/>} />
          <Route path="/terms" element={<TermsAndConditions/>} />
+         <Route path="/admin" element={<SuperAdminDashboard/>} />
 
          
 
