@@ -9,6 +9,7 @@ import LoggedInProfilePage from "../pages/LoggedInProfilePage";
 import DiscoverEventsPage from "../pages/DiscoverEventPage";
 import TicketProceed from "../pages/TicketProceed";
 import PaymentConfirmation from "../pages/PaymentConfirmation";
+import TermsAndConditions from "../pages/TermsAndConditions";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const AppRoutes: React.FC = () => {
          <Route path="/discover" element={<DiscoverEventsPage/>} />
          <Route path="/ticket-proceed" element={<TicketProceed/>} />
          <Route path="/payment" element={<PaymentConfirmation/>} />
+         <Route path="/terms" element={<TermsAndConditions/>} />
 
          
 
