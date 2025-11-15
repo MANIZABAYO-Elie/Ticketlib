@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '../components/Button';
+import { Link } from 'react-router-dom';
 import { ChevronRight, Moon, Bell, MessageCircle, AlertTriangle, HelpCircle, FileText, Shield, User, ChevronLeft } from 'lucide-react';
+
 
 const ProfilePage: React.FC = () => {
   const [accountNotifications, setAccountNotifications] = useState(true);
+   
 
   const ProfileSection = () => (
     <div className="bg-white rounded-lg p-6 mb-4">
@@ -19,7 +22,7 @@ const ProfilePage: React.FC = () => {
             <p className="text-sm text-gray-500">you can login here</p>
           </div>
         </div>
-        <ChevronRight className="text-gray-400" size={24} />
+        <Link to={'/signIn'}><ChevronRight className="text-gray-400" size={24} /></Link>
       </div>
     </div>
   );

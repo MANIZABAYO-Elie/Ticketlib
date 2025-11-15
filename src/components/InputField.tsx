@@ -6,6 +6,7 @@ interface InputFieldProps {
   name?:string;
   placeholder: string;
   value?: string;
+  required?:boolean;
   className?:string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   icon?: React.ReactNode;
@@ -17,6 +18,7 @@ const InputField: React.FC<InputFieldProps> = ({
   name,
   placeholder,
   className,
+  required,
   value,
   onChange,
   icon,
@@ -32,6 +34,7 @@ const InputField: React.FC<InputFieldProps> = ({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          required={required}
           className={`bg-transparent flex-1 outline-none text-base sm:text-lg lg:text-xl ${className || ''}`}
         />
       </div>

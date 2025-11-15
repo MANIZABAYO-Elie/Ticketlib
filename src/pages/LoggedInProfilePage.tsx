@@ -1,11 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Moon, Bell, MessageCircle, AlertTriangle, HelpCircle, FileText, Shield, Trash2, ChevronLeft, UserPlus, LogIn, User } from 'lucide-react';
+import { ChevronRight, Moon, Bell, MessageCircle, AlertTriangle, HelpCircle, FileText, Shield, ChevronLeft, User, Edit, LogOut } from 'lucide-react';
 import { Button } from '../components/Button';
+import { useLogoutMutation } from '../app/authApi';
 
 const LoggedInProfilePage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userFullName, setUserFullName] = useState('');
   const navigate = useNavigate();
+  const [logoutMutation] = useLogoutMutation();
+
+  useEffect(() => {
+    const email = localStorage.getItem('email') || '';
+    const fullName = localStorage.getItem('full_name') || '';
+    
+    setUserEmail(email);
+    setUserFullName(fullName || email || 'User');
+    
+    const handleUserLogin = () => {
+      const updatedEmail = localStorage.getItem('email') || '';
+      const updatedFullName = localStorage.getItem('full_name') || '';
+      setUserEmail(updatedEmail);
+      setUserFullName(updatedFullName || updatedEmail || 'User');
+    };
+    
+    window.addEventListener('user:login', handleUserLogin);
+    
+    return () => {
+      window.removeEventListener('user:login', handleUserLogin);
+    };
+  }, []);
+
+  // Generate initials from full name or email
+  const getInitials = (name: string): string => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logoutMutation().unwrap();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('email');
+      localStorage.removeItem('full_name');
+      localStorage.removeItem('user_id');
+      window.dispatchEvent(new Event('user:login'));
+      navigate('/');
+    }
+  };
 
   const ProfileSection = () => (
     <div className="bg-white rounded-lg p-6 mb-4">
@@ -13,13 +59,30 @@ const LoggedInProfilePage: React.FC = () => {
       
       <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
         <div className="flex flex-col items-center flex-1">
-          <div className="w-20 h-20 bg-gray-200 rounded-full mb-3 flex items-center justify-center">
-            <User size={40} className="text-gray-500" />
+          <div className="w-20 h-20 bg-blue-600 rounded-full mb-3 flex items-center justify-center">
+            <span className="text-white text-xl font-bold">{getInitials(userFullName)}</span>
           </div>
-          <p className="font-semibold text-gray-900">User</p>
-          <p className="text-sm text-gray-600">user@gmail.com</p>
+          <p className="font-semibold text-gray-900">{userFullName}</p>
+          <p className="text-sm text-gray-600">{userEmail}</p>
         </div>
         <ChevronRight className="text-gray-400" size={24} />
+      </div>
+      
+      <div className="flex gap-3 mt-4">
+        <Button
+          onClick={() => navigate('/edit-profile')}
+          className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Edit size={16} />
+          Edit Profile
+        </Button>
+        <Button
+          onClick={handleSignOut}
+          className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <LogOut size={16} />
+          Sign Out
+        </Button>
       </div>
     </div>
   );
@@ -116,41 +179,6 @@ const LoggedInProfilePage: React.FC = () => {
     </div>
   );
 
-  const AccountManagerSection = () => (
-    <div className="bg-white rounded-lg p-6 mb-4">
-      <h2 className="text-xl font-bold mb-4">ACCOUNT MANAGER</h2>
-      
-      <div className="space-y-2">
-        <div 
-          onClick={() => navigate('/signIn')}
-          className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <LogIn size={20} className="text-gray-700" />
-            <span className="text-gray-900">Sign In</span>
-          </div>
-          <ChevronRight className="text-gray-400" size={20} />
-        </div>
-        
-        <div 
-          onClick={() => navigate('/signup')}
-          className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <UserPlus size={20} className="text-gray-700" />
-            <span className="text-gray-900">Create Account</span>
-          </div>
-          <ChevronRight className="text-gray-400" size={20} />
-        </div>
-        
-        <div className="flex items-center gap-3 p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-          <Trash2 size={20} className="text-red-600" />
-          <span className="text-red-600">Delete account</span>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl h-[90vh] mx-auto bg-white rounded-xl shadow-md overflow-hidden overflow-y-auto">
@@ -171,7 +199,6 @@ const LoggedInProfilePage: React.FC = () => {
           <DisplaySection />
           <NotificationsSection />
           <AccountSection />
-          <AccountManagerSection />
         </div>
       </div>
     </div>

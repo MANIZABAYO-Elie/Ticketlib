@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import InputField from "../components/InputField";
 import SelectField from "../components/SelectField";
 import { Button } from "../components/Button";
 import { Mail, Lock, User, Phone } from "lucide-react";
 import { useGetAllQuery } from "../features/countries/countriesApi";
+import { useRegisterMutation } from "../app/authApi";
 
 interface CountrySelectFieldProps {
   value: string;
@@ -22,7 +24,10 @@ const CountrySelectField: React.FC<CountrySelectFieldProps> = ({ value, onChange
     return <SelectField options={["Rwanda"]} value={value} onChange={onChange} name="country" />;
   }
 
-  const countryOptions = countries.map((country) => country?.name?.common).filter(Boolean) as string[];
+  const countryOptions = countries.map((country) => ({
+    name: country?.name?.common,
+    code: country?.cca2
+  })).filter(item => item.name && item.code);
 
   return (
     <div className="flex flex-col w-full mb-4">
@@ -35,8 +40,8 @@ const CountrySelectField: React.FC<CountrySelectFieldProps> = ({ value, onChange
       >
         <option value="">Select Country</option>
         {countryOptions.map((country) => (
-          <option key={country} value={country}>
-            {country}
+          <option key={country.code} value={country.code}>
+            {country.name}
           </option>
         ))}
       </select>
@@ -49,12 +54,16 @@ const Signup: React.FC = () => {
     fullName: "",
     gender: "",
     dob: "",
-    country: "Rwanda",
+    country: "RW",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
   });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [register, { isLoading }] = useRegisterMutation();
+  const navigate = useNavigate();
 
   // accept change from both input and select elements
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -62,10 +71,76 @@ const Signup: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    if (!formData.fullName.trim()) {
+      setErrorMessage("Full name is required");
+      return false;
+    }
+    if (!formData.gender) {
+      setErrorMessage("Gender is required");
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setErrorMessage("Email is required");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setErrorMessage("Please enter a valid email address");
+      return false;
+    }
+    if (!formData.password) {
+      setErrorMessage("Password is required");
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long");
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage("Passwords do not match");
+      return false;
+    }
+    if (!formData.country) {
+      setErrorMessage("Country is required");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form Data:", formData);
-    // add validation / API call here
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await register({
+        full_name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        password_confirm: formData.confirmPassword,
+        phone: formData.phone,
+        your_country: formData.country,
+        gender: formData.gender,
+      }).unwrap();
+
+      setSuccessMessage("Account created successfully! Please check your email to verify your account.");
+      setFormData({
+        fullName: "",
+        gender: "",
+        dob: "",
+        country: "RW",
+        email: "",
+        phone: "",
+        password: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      setErrorMessage(error?.data?.message || "Failed to create account");
+    }
   };
 
   return (
@@ -78,6 +153,16 @@ const Signup: React.FC = () => {
 
         {/* Body */}
         <div className="p-6 sm:p-8 md:p-10 lg:p-12 xl:p-16">
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              {successMessage}
+            </div>
+          )}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {errorMessage}
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
             <InputField
               placeholder="Enter full names"
@@ -85,10 +170,11 @@ const Signup: React.FC = () => {
               icon={<User size={18} />}
               value={formData.fullName}
               onChange={handleChange}
+              required
             />
 
             {/* pass the name so handleChange can pick it up */}
-            <SelectField options={["Male", "Female", "Other"]} name="gender" value={formData.gender} onChange={handleChange} />
+            <SelectField options={["male", "female", "other"]} name="gender" value={formData.gender} onChange={handleChange} />
 
             <InputField
               type="date"
@@ -107,6 +193,7 @@ const Signup: React.FC = () => {
               icon={<Mail size={18} />}
               value={formData.email}
               onChange={handleChange}
+              required
             />
 
             <InputField
@@ -120,11 +207,12 @@ const Signup: React.FC = () => {
 
             <InputField
               type="password"
-              placeholder="Enter strong password"
+              placeholder="Enter strong password (min 6 characters)"
               name="password"
               icon={<Lock size={18} />}
               value={formData.password}
               onChange={handleChange}
+              required
             />
 
             <InputField
@@ -134,11 +222,15 @@ const Signup: React.FC = () => {
               icon={<Lock size={18} />}
               value={formData.confirmPassword}
               onChange={handleChange}
+              required
             />
 
             <div className="mt-6 sm:mt-7 lg:mt-8">
-              <Button className="w-full h-10 sm:h-12 md:h-14 bg-blue-500 text-white py-2 sm:py-3 lg:py-4 rounded-md  transition-colors hover:bg-white hover:text-blue-400 sm:text-lg lg:text-xl font-medium">
-                Create account
+              <Button 
+                disabled={isLoading}
+                className="w-full h-10 sm:h-12 md:h-14 bg-blue-500 text-white py-2 sm:py-3 lg:py-4 rounded-md transition-colors hover:bg-white hover:text-blue-400 sm:text-lg lg:text-xl font-medium disabled:opacity-50"
+              >
+                {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </div>
 
@@ -146,7 +238,7 @@ const Signup: React.FC = () => {
               <button
                 type="button"
                 className="text-blue-600 text-base sm:text-lg lg:text-xl hover:underline"
-                onClick={() => console.log("Back to login")}
+                onClick={() => navigate("/signIn")}
               >
                 Back to login?
               </button>
