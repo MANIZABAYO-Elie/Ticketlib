@@ -15,6 +15,7 @@ import OtpVerificationPage from "../pages/OtpVerificationPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import Dashboard from "../pages/Dashboard";
 import OrganizerDashboard from "../pages/OrganizerDashboard";
+import SuperAdminDashboard from "../pages/SuperAdminDashboard";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -35,9 +36,7 @@ const AppRoutes: React.FC = () => {
          <Route path="/reset-password" element={<ResetPasswordPage/>} />
          <Route path="/dashboard" element={<Dashboard/>} />
          <Route path="/organizer-dashboard" element={<OrganizerDashboard/>} />
-
-         
-
+         <Route path="/admin" element={<SuperAdminDashboard/>} />
       </Routes>
     </BrowserRouter>
   );
