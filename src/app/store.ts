@@ -2,6 +2,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { countriesApi } from '../features/countries/countriesApi';
 import { authApi } from './authApi';
+import { organizerApi } from './organizerApi';
 import authReducer from './authSlice';
 
 export const store = configureStore({
@@ -9,11 +10,13 @@ export const store = configureStore({
     auth: authReducer,
     [countriesApi.reducerPath]: countriesApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
+    [organizerApi.reducerPath]: organizerApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       countriesApi.middleware,
-      authApi.middleware
+      authApi.middleware,
+      organizerApi.middleware
     ),
 });
 

@@ -4,6 +4,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
+  role?: string;
 }
 
 interface AuthState {
@@ -18,6 +19,7 @@ const initialState: AuthState = {
     id: localStorage.getItem('user_id') || '',
     email: localStorage.getItem('email') || '',
     full_name: localStorage.getItem('full_name') || '',
+    role: localStorage.getItem('user_role') || 'user',
   } : null,
   token: localStorage.getItem('access_token'),
 };
@@ -34,6 +36,9 @@ const authSlice = createSlice({
       localStorage.setItem('email', action.payload.user.email);
       localStorage.setItem('full_name', action.payload.user.full_name);
       localStorage.setItem('user_id', action.payload.user.id);
+      if (action.payload.user.role) {
+        localStorage.setItem('user_role', action.payload.user.role);
+      }
     },
     logout: (state) => {
       state.isAuthenticated = false;
@@ -43,6 +48,7 @@ const authSlice = createSlice({
       localStorage.removeItem('email');
       localStorage.removeItem('full_name');
       localStorage.removeItem('user_id');
+      localStorage.removeItem('user_role');
     },
   },
 });
