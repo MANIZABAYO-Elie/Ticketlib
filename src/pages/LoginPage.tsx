@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaArrowLeft } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import InputField from "../components/InputField";
 import { Button } from "../components/Button";
 import { useLoginMutation, useForgotPasswordMutation } from "../app/authApi";
+import { useAppDispatch } from "../app/hooks";
 import { login } from "../app/authSlice";
 
 const LoginPage: React.FC = () => {
@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
   const [loginMutation, { isLoading }] = useLoginMutation();
   const [forgotPassword, { isLoading: isForgotLoading }] = useForgotPasswordMutation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,27 +52,40 @@ const LoginPage: React.FC = () => {
         password: formData.password,
       }).unwrap();
 
-      // Dispatch login action to Redux store
-      if (response.access_token) {
+      if (response.data?.access) {
+        const userRole = response.data.user.role.toLowerCase();
+        console.log('User role from API:', userRole);
+        console.log('Full response:', response);
+        
+        // Dispatch login action to Redux store
         dispatch(login({
           user: {
-            id: response.user_id || response.id || '',
-            email: response.email || formData.email,
-            full_name: response.full_name || response.name || '',
+            id: response.data.user.id.toString(),
+            email: response.data.user.email,
+            fullName: response.data.user.full_name,
+            role: userRole,
           },
-          token: response.access_token,
+          token: response.data.access,
         }));
+        
+        setSuccessMessage("Login successful!");
+        
+        // Role-based redirect
+        let redirectPath = "/";
+        if (userRole === "admin") {
+          redirectPath = "/admin-dashboard";
+        } else if (userRole === "organizer") {
+          redirectPath = "/organizer-dashboard";
+        }
+        
+        console.log('Redirecting to:', redirectPath);
+        navigate(redirectPath);
       }
-
-      setSuccessMessage("Login successful!");
-      setTimeout(() => {
-        navigate('/logged-in-profile');
-      }, 1000);
     } catch (error: any) {
-      if (error?.status === 401 || error?.data?.detail?.includes('Invalid') || error?.data?.message?.includes('Invalid')) {
+      if (error?.status === 401 || error?.data?.detail?.includes('Invalid') || error?.data?.message?.includes('Invalid') || error?.data?.message?.includes('credentials') || error?.data?.detail?.includes('credentials')) {
         setErrorMessage("Invalid credentials");
       } else {
-        setErrorMessage(error?.data?.message || "Login failed");
+        setErrorMessage(error?.data?.message || "Invalid credentials");
       }
     }
   };
@@ -109,8 +122,15 @@ const LoginPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl bg-white rounded-xl shadow-md overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white text-center py-6 lg:py-8 rounded-t-xl">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold">Sign in</h2>
+        <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white py-6 lg:py-8 rounded-t-xl relative">
+          <button
+            onClick={() => navigate("/")}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 hover:bg-blue-600 rounded-full transition-colors"
+            title="Back to home"
+          >
+            <FaArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-center">Sign in</h2>
         </div>
 
         {/* Body */}
@@ -157,12 +177,14 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end mb-4 sm:mb-5 lg:mb-6">
-              <Link
-                to="/forgot-password"
-                className="text-base sm:text-lg lg:text-xl text-blue-500 hover:underline"
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={isForgotLoading}
+                className="text-base sm:text-lg lg:text-xl text-blue-500 hover:underline disabled:opacity-50"
               >
-                Forgot password?
-              </Link>
+                {isForgotLoading ? "Sending..." : "Forgot password?"}
+              </button>
             </div>
 
             <Button

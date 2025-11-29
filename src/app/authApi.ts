@@ -1,5 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+interface ContactUsData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 const authBaseQuery = fetchBaseQuery({
   baseUrl: `${import.meta.env.VITE_API_URL}/auth`,
   prepareHeaders: (headers, { endpoint }) => {
@@ -119,6 +126,33 @@ export const authApi = createApi({
     getUserDetails: builder.query<User, number>({
       query: (id) => `/user/${id}/get_user/`,
     }),
+    
+    createUser: builder.mutation<any, {
+      email: string;
+      full_name: string;
+      password: string;
+      role: string;
+      phone: string;
+      your_country: string;
+    }>({
+      query: (userData) => ({
+        url: '/admin/create_user/',
+        method: 'POST',
+        body: userData,
+      }),
+    }),
+    
+    getUsersList: builder.query<any, void>({
+      query: () => '/admin/users_list/',
+    }),
+    
+    contactUs: builder.mutation<any, ContactUsData>({
+      query: (data) => ({
+        url: '/user/contact_us/',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -134,4 +168,7 @@ export const {
   useGetProfileQuery,
   useGetUserDetailsQuery,
   useGetMeQuery,
+  useCreateUserMutation,
+  useGetUsersListQuery,
+  useContactUsMutation,
 } = authApi;

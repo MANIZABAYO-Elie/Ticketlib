@@ -1,36 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Moon, Bell, MessageCircle, AlertTriangle, HelpCircle, FileText, Shield, ChevronLeft, User, Edit, LogOut } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useLogoutMutation } from '../app/authApi';
+import { useAppSelector, useAppDispatch } from '../app/hooks';
+import { logout } from '../app/authSlice';
 
 const LoggedInProfilePage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [userFullName, setUserFullName] = useState('');
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [logoutMutation] = useLogoutMutation();
-
-  useEffect(() => {
-    const email = localStorage.getItem('email') || '';
-    const fullName = localStorage.getItem('full_name') || '';
-    
-    setUserEmail(email);
-    setUserFullName(fullName || email || 'User');
-    
-    const handleUserLogin = () => {
-      const updatedEmail = localStorage.getItem('email') || '';
-      const updatedFullName = localStorage.getItem('full_name') || '';
-      setUserEmail(updatedEmail);
-      setUserFullName(updatedFullName || updatedEmail || 'User');
-    };
-    
-    window.addEventListener('user:login', handleUserLogin);
-    
-    return () => {
-      window.removeEventListener('user:login', handleUserLogin);
-    };
-  }, []);
+  
+  // Get user data from Redux
+  const { user } = useAppSelector((state) => state.auth);
+  const userEmail = user?.email || '';
+  const userFullName = user?.fullName || user?.email || 'User';
 
   // Generate initials from full name or email
   const getInitials = (name: string): string => {
@@ -44,11 +29,7 @@ const LoggedInProfilePage: React.FC = () => {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('email');
-      localStorage.removeItem('full_name');
-      localStorage.removeItem('user_id');
-      window.dispatchEvent(new Event('user:login'));
+      dispatch(logout());
       navigate('/');
     }
   };

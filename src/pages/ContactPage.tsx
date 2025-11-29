@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, User } from 'lucide-react';
+import { useContactUsMutation } from '../app/authApi';
 
 interface InputFieldProps {
   label: string;
@@ -93,17 +94,20 @@ const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ icon, title, info }) 
 interface FormData {
   name: string;
   email: string;
-  phone: string;
+  subject: string;
   message: string;
 }
 
 const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    email: 'philos@gmail.com',
-    phone: '+278238478',
+    email: '',
+    subject: '',
     message: ''
   });
+  const [contactUs, { isLoading }] = useContactUsMutation();
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (field: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -114,8 +118,22 @@ const ContactPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
+  const handleSubmit = async () => {
+    setSuccessMessage('');
+    setErrorMessage('');
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      setErrorMessage('Please fill in all fields');
+      return;
+    }
+    
+    try {
+      await contactUs(formData).unwrap();
+      setSuccessMessage('Message sent successfully!');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error: any) {
+      setErrorMessage(error?.data?.message || 'Failed to send message');
+    }
   };
 
   return (
@@ -150,6 +168,17 @@ const ContactPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Contact Form</h2>
           
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              {successMessage}
+            </div>
+          )}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {errorMessage}
+            </div>
+          )}
+          
           <div>
             <InputField
               label="Your Name"
@@ -161,21 +190,20 @@ const ContactPage: React.FC = () => {
             />
 
             <InputField
-              label="Mail"
+              label="Email"
               type="email"
-              placeholder="philos@gmail.com"
+              placeholder="your@email.com"
               value={formData.email}
               onChange={handleInputChange('email')}
               icon={<Mail size={18} />}
             />
 
             <InputField
-              label="Phone"
-              type="tel"
-              placeholder="+278238478"
-              value={formData.phone}
-              onChange={handleInputChange('phone')}
-              icon={<Phone size={18} />}
+              label="Subject"
+              type="text"
+              placeholder="Subject"
+              value={formData.subject}
+              onChange={handleInputChange('subject')}
             />
 
             <TextAreaField
@@ -188,9 +216,10 @@ const ContactPage: React.FC = () => {
 
             <button
               onClick={handleSubmit}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
             >
-              Send Message
+              {isLoading ? 'Sending...' : 'Send Message'}
             </button>
           </div>
         </div>

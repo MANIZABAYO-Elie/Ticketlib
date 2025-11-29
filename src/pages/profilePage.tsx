@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '../components/Button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Moon, Bell, MessageCircle, AlertTriangle, HelpCircle, FileText, Shield, User, ChevronLeft } from 'lucide-react';
 
 
 const ProfilePage: React.FC = () => {
   const [accountNotifications, setAccountNotifications] = useState(true);
+  const navigate = useNavigate();
    
 
   const ProfileSection = () => (
@@ -128,7 +129,9 @@ const ProfilePage: React.FC = () => {
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-800 to-blue-500 text-white text-center py-6 lg:py-8 rounded-t-xl relative">
           <button 
+            onClick={() => navigate("/")}
             className="absolute left-4 top-1/2 transform -translate-y-1/2 hover:bg-blue-600 p-2 rounded-full transition-colors"
+            title="Back to home"
           >
             <ChevronLeft size={24} />
           </button>

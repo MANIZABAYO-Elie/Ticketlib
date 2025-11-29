@@ -13,9 +13,10 @@ import TermsAndConditions from "../pages/TermsAndConditions";
 import ForgotPassword from "../pages/ForgotPassword";
 import OtpVerificationPage from "../pages/OtpVerificationPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
-import Dashboard from "../pages/Dashboard";
 import OrganizerDashboard from "../pages/OrganizerDashboard";
 import SuperAdminDashboard from "../pages/SuperAdminDashboard";
+import ModeratorDashboard from "../pages/ModeratorDashboard";
+import TicketBookingSystem from "../pages/TicketBookingSystem";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -34,9 +35,11 @@ const AppRoutes: React.FC = () => {
          <Route path="/forgot-password" element={<ForgotPassword/>} />
          <Route path="/otp-verification" element={<OtpVerificationPage/>} />
          <Route path="/reset-password" element={<ResetPasswordPage/>} />
-         <Route path="/dashboard" element={<Dashboard/>} />
          <Route path="/organizer-dashboard" element={<OrganizerDashboard/>} />
-         <Route path="/admin" element={<SuperAdminDashboard/>} />
+         <Route path="/moderator-dashboard" element={<ModeratorDashboard/>} />
+         <Route path="/admin-dashboard" element={<SuperAdminDashboard/>} />
+         <Route path="/book-tickets" element={<TicketBookingSystem/>} />
+         <Route path="/book-tickets/:eventId" element={<TicketBookingSystem/>} />
       </Routes>
     </BrowserRouter>
   );
