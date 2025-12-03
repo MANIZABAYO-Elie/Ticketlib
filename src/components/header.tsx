@@ -428,7 +428,7 @@ const Header: React.FC<HeaderProps> = ({
   const displayName = user?.fullName || user?.email || "User";
 
   return (
-    <header className="bg-[#fff8fb] border-b border-[#f0ebf0] sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-[#1E3A8A] to-[#3B82F6] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* LEFT: logo / brand */}
@@ -449,7 +449,7 @@ const Header: React.FC<HeaderProps> = ({
                   <div className="w-3 h-3 bg-indigo-400 rounded-sm" />
                   <div className="w-3 h-3 bg-pink-400 rounded-sm" />
                 </div>
-                <span className="text-xl font-semibold text-gray-800 ml-2">{brandName}</span>
+                <span className="text-xl font-semibold text-white ml-2">{brandName}</span>
               </div>
             )}
           </div>
@@ -461,7 +461,7 @@ const Header: React.FC<HeaderProps> = ({
                 <li key={link.name}>
                   <button
                     onClick={() => handleNavClick(link)}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 focus:outline-none"
+                    className="flex items-center gap-2 text-sm font-medium text-white hover:text-blue-200 focus:outline-none"
                     title={link.name}
                   >
                     {link.icon && <span className="text-lg">{link.icon}</span>}
@@ -475,7 +475,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* RIGHT: actions */}
           <div className="flex items-center gap-4 justify-end">
             <button
-              className="p-1 text-gray-700 hover:text-blue-600 focus:outline-none"
+              className="p-1 text-white hover:text-blue-200 focus:outline-none"
               title="Notifications"
               aria-label="Notifications"
             >
@@ -485,7 +485,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* User icon */}
             <button
               onClick={handleAvatarClick}
-              className="p-1 text-gray-700 hover:text-blue-600 focus:outline-none"
+              className="p-1 text-white hover:text-blue-200 focus:outline-none"
               title={isLoggedIn ? `Go to profile (${displayName})` : "Go to profile"}
               aria-label="User profile"
             >
@@ -495,7 +495,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* Sign in button - hidden when logged in */}
             {!isLoggedIn && (
               <Link to="/signIn">
-                <button className="hidden sm:inline-flex items-center px-4 sm:px-8 py-2 rounded-full bg-blue-600 text-white text-sm sm:text-lg font-semibold hover:bg-blue-700 focus:outline-none">
+                <button className="hidden sm:inline-flex items-center px-4 sm:px-8 py-2 rounded-full bg-white text-blue-600 text-sm sm:text-lg font-semibold hover:bg-blue-50 focus:outline-none shadow-lg">
                   Sign in
                 </button>
               </Link>
@@ -508,7 +508,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={toggleMobile}
                 aria-controls="mobile-menu"
                 aria-expanded={mobileOpen}
-                className="p-2 rounded-md text-gray-700 hover:text-gray-900 focus:outline-none"
+                className="p-2 rounded-md text-white hover:text-blue-200 focus:outline-none"
               >
                 <span className="sr-only">Open menu</span>
                 {mobileOpen ? (

@@ -1,8 +1,15 @@
-import React, { useState, type ChangeEvent } from "react";
+import React, { useState, useEffect, type ChangeEvent } from "react";
 
 const TermsAndConditions: React.FC = () => {
-  // Explicitly type state as boolean
   const [isChecked, setIsChecked] = useState<boolean>(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+
+  useEffect(() => {
+    const ticketData = localStorage.getItem('selected_ticket');
+    if (ticketData) {
+      setSelectedTicket(JSON.parse(ticketData));
+    }
+  }, []);
 
   // Explicitly type event
   const handleCheckboxChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -14,8 +21,8 @@ const TermsAndConditions: React.FC = () => {
       alert("Please accept the terms and conditions to continue");
       return;
     }
-    console.log("Terms accepted, proceeding...");
-    alert("Proceeding to next step...");
+    // Navigate to ticket booking system
+    window.location.href = '/ticket-booking';
   };
 
   return (
@@ -23,8 +30,29 @@ const TermsAndConditions: React.FC = () => {
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-8 sm:p-12 md:p-16">
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 text-center mb-8 sm:mb-12">
-          Terms And Condition Apply
+          Terms And Conditions Apply
         </h1>
+
+        {/* Selected Ticket Info */}
+        {selectedTicket && (
+          <div className="bg-blue-50 rounded-lg p-6 mb-8">
+            <h2 className="text-xl font-bold text-blue-900 mb-4">Selected Ticket</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Event:</span>
+                <p className="font-medium">{selectedTicket.eventTitle}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Ticket Type:</span>
+                <p className="font-medium">{selectedTicket.ticketType}</p>
+              </div>
+              <div className="md:col-span-2">
+                <span className="text-gray-600">Price:</span>
+                <p className="font-medium text-blue-600 text-lg">RWF {parseInt(selectedTicket.price || 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="space-y-6 sm:space-y-8 text-gray-700">
@@ -66,18 +94,24 @@ const TermsAndConditions: React.FC = () => {
           </label>
         </div>
 
-        {/* Continue Button */}
-        <div className="flex justify-center">
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="text-lg font-semibold px-8 py-3 rounded-xl border-2 border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Back
+          </button>
           <button
             onClick={handleContinue}
             disabled={!isChecked}
-            className={`text-xl sm:text-2xl md:text-3xl font-bold px-12 sm:px-16 md:px-20 py-3 sm:py-4 rounded-xl transition-all duration-300 transform ${
+            className={`text-lg font-bold px-12 py-3 rounded-xl transition-all duration-300 ${
               isChecked
-                ? "text-blue-600 hover:text-blue-700 hover:scale-105 active:scale-95 cursor-pointer"
-                : "text-gray-400 cursor-not-allowed opacity-60"
+                ? "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 cursor-pointer"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
             }`}
           >
-            Continue
+            Continue to Seat Selection
           </button>
         </div>
       </div>

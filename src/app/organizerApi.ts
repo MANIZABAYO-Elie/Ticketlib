@@ -164,7 +164,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const organizerBaseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   prepareHeaders: (headers) => {
-    // fetchBaseQuery's headers is a Headers instance
     headers.set('Content-Type', 'application/json');
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -173,6 +172,17 @@ const organizerBaseQuery = fetchBaseQuery({
     return headers;
   },
 });
+
+const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
+  const result = await organizerBaseQuery(args, api, extraOptions);
+  
+  // Don't logout on 401 for public endpoints
+  if (result.error?.status === 401) {
+    console.warn('API returned 401, but not logging out automatically');
+  }
+  
+  return result;
+};
 
 // --- Types ---
 export interface Venue {
@@ -196,12 +206,16 @@ export interface EventItem {
   end_datetime: string | null;
   venue: number | Venue;
   venue_name?: string;
-  category?: string[] | { id: number; name: string }[] | null;
+  category?: string
   created_at?: string;
-  status?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
   is_featured?: boolean;
   organizer_name?: string;
   is_active?: boolean | string;
+  submitted_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
 }
 
 export interface VenuesResponse {
@@ -223,7 +237,8 @@ export interface CreateEventData {
   start_datetime: string;
   end_datetime: string;
   venue: number;
-  category: number;
+  category: string;
+  status?: string;
 }
 
 export interface CreateVenueData {
@@ -235,24 +250,33 @@ export interface CreateVenueData {
   google_maps_url?: string;
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  description: string;
-  created_at: string;
+export interface CreateSeatData {
+  section: string;
+  row: string;
+  number: string;
+  is_accessible: boolean;
 }
 
-export interface CategoriesResponse {
+export interface Seat {
+  id: number;
+  section: string;
+  row: string;
+  number: string;
+  is_accessible: boolean;
+}
+
+export interface VenueSeatsResponse {
   count: number;
   next: string | null;
   previous: string | null;
-  results: Category[];
+  results: Seat[];
 }
 
-export interface CreateCategoryData {
-  name: string;
-  description: string;
-}
+
+
+
+
+
 
 export interface Tag {
   id: number;
@@ -271,16 +295,79 @@ export interface CreateTagData {
   name: string;
 }
 
+export interface CategoriesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: any[];
+}
+
+export interface TicketType {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  quantity_available: number;
+  sale_start: string;
+  sale_end: string;
+  created_at: string;
+}
+
+export interface CreateTicketTypeData {
+  name: string;
+  description: string;
+  price: string;
+  quantity_available: number;
+  sale_start: string;
+  sale_end: string;
+}
+
+export interface SeatMapResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: {
+    id: number;
+    seat: {
+      id: number;
+      section: string;
+      row: string;
+      number: string;
+      is_accessible: boolean;
+    };
+    ticket_type: {
+      id: number;
+      name: string;
+      description: string;
+      price: string;
+      quantity_available: number;
+      quantity_sold: number;
+      quantity_remaining: string;
+      sale_start: string;
+      sale_end: string;
+      is_available: string;
+      created_at: string;
+    };
+    is_reserved: boolean;
+    is_available: string;
+  }[];
+}
+
 // --- API ---
 export const organizerApi = createApi({
   reducerPath: 'organizerApi',
-  baseQuery: organizerBaseQuery,
-  tagTypes: ['Event', 'Venue', 'Category', 'Tag'],
+  baseQuery: baseQueryWithReauth,
+  tagTypes: ['Event', 'Venue', 'Category', 'Tag', 'TicketType'],
   endpoints: (builder) => ({
     // GET /events/ -> normalize common backend shapes into EventsResponse
     getEvents: builder.query<EventsResponse, void>({
-      query: () => '/events/',
+      query: () => {
+        console.log('API_URL:', API_URL);
+        console.log('Making request to /events/');
+        return '/events/';
+      },
       transformResponse: (response: any) => {
+        console.log('Events API response:', response);
         // Try to adapt various backend response shapes.
         // If backend already returns { count, results }, return as-is.
         if (response && response.count !== undefined && response.results !== undefined) {
@@ -322,6 +409,10 @@ export const organizerApi = createApi({
           results: [],
         } as EventsResponse;
       },
+      transformErrorResponse: (response: any) => {
+        console.error('Events API error:', response);
+        return response;
+      },
       providesTags: (result) =>
         result
           ? [
@@ -360,6 +451,221 @@ export const organizerApi = createApi({
     getEventStats: builder.query<any, void>({
       query: () => '/api/stats/',
       // no tags needed (read-only)
+    }),
+
+    // Test endpoint to check API connectivity
+    testConnection: builder.query<any, void>({
+      query: () => {
+        console.log('Testing API connection to:', API_URL);
+        return '/health/';
+      },
+      transformErrorResponse: (response: any) => {
+        console.error('API connection test failed:', response);
+        return response;
+      },
+    }),
+
+    // Submit event for approval
+    submitEventForApproval: builder.mutation<EventItem, number>({
+      query: (id) => ({
+        url: `/events/${id}/submit_for_approval/`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Event', id }, 
+        { type: 'Event', id: 'LIST' },
+        { type: 'Event', id: 'PENDING' },
+        { type: 'Event', id: 'MODERATOR' }
+      ],
+    }),
+
+    // Publish approved event
+    publishEvent: builder.mutation<EventItem, number>({
+      query: (id) => ({
+        url: `/events/${id}/publish_event/`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Event', id },
+        { type: 'Event', id: 'LIST' },
+        { type: 'Event', id: 'APPROVED' }
+      ],
+    }),
+
+    // Moderator events endpoint
+    getModeratorEvents: builder.query<EventsResponse, void>({
+      query: () => '/moderator/events/all_events/',
+      transformResponse: (response: any) => {
+        console.log('Moderator Events API response:', response);
+        if (response && response.count !== undefined && response.results !== undefined) {
+          return response as EventsResponse;
+        }
+        if (response && response.data) {
+          if (Array.isArray(response.data)) {
+            return {
+              count: response.data.length,
+              next: null,
+              previous: null,
+              results: response.data,
+            } as EventsResponse;
+          }
+          if (response.data.results) {
+            return response.data as EventsResponse;
+          }
+        }
+        if (Array.isArray(response)) {
+          return {
+            count: response.length,
+            next: null,
+            previous: null,
+            results: response,
+          } as EventsResponse;
+        }
+        return {
+          count: 0,
+          next: null,
+          previous: null,
+          results: [],
+        } as EventsResponse;
+      },
+      providesTags: [{ type: 'Event', id: 'MODERATOR' }],
+    }),
+
+    getPendingEvents: builder.query<EventsResponse, void>({
+      query: () => '/moderator/events/pending_approval/',
+      transformResponse: (response: any) => {
+        console.log('Pending Events API response:', response);
+        // Handle the actual API response structure: { status, message, data: [...] }
+        if (response && response.data && Array.isArray(response.data)) {
+          return {
+            count: response.data.length,
+            next: null,
+            previous: null,
+            results: response.data,
+          } as EventsResponse;
+        }
+        // Handle paginated response: { count, results: [...] }
+        if (response && response.count !== undefined && response.results !== undefined) {
+          return response as EventsResponse;
+        }
+        // Handle direct array response
+        if (Array.isArray(response)) {
+          return {
+            count: response.length,
+            next: null,
+            previous: null,
+            results: response,
+          } as EventsResponse;
+        }
+        return {
+          count: 0,
+          next: null,
+          previous: null,
+          results: [],
+        } as EventsResponse;
+      },
+      providesTags: [{ type: 'Event', id: 'PENDING' }],
+    }),
+
+    approveEvent: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/moderator/events/${id}/approve_event/`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Event', id },
+        { type: 'Event', id: 'LIST' },
+        { type: 'Event', id: 'PENDING' },
+        { type: 'Event', id: 'MODERATOR' },
+      ],
+    }),
+
+    rejectEvent: builder.mutation<void, { id: number; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/moderator/events/${id}/reject_event/`,
+        method: 'POST',
+        body: { reason: reason || 'Event rejected' },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Event', id },
+        { type: 'Event', id: 'LIST' },
+        { type: 'Event', id: 'PENDING' },
+        { type: 'Event', id: 'MODERATOR' },
+      ],
+    }),
+
+    // Get approved events for organizer
+    getApprovedEvents: builder.query<EventsResponse, void>({
+      query: () => '/events/approved/',
+      transformResponse: (response: any) => {
+        console.log('Approved Events API response:', response);
+        // Handle the actual API response structure: { status, message, data: [...] }
+        if (response && response.data && Array.isArray(response.data)) {
+          return {
+            count: response.data.length,
+            next: null,
+            previous: null,
+            results: response.data,
+          } as EventsResponse;
+        }
+        // Handle paginated response: { count, results: [...] }
+        if (response && response.count !== undefined && response.results !== undefined) {
+          return response as EventsResponse;
+        }
+        // Handle direct array response
+        if (Array.isArray(response)) {
+          return {
+            count: response.length,
+            next: null,
+            previous: null,
+            results: response,
+          } as EventsResponse;
+        }
+        return {
+          count: 0,
+          next: null,
+          previous: null,
+          results: [],
+        } as EventsResponse;
+      },
+      providesTags: [{ type: 'Event', id: 'APPROVED' }],
+    }),
+
+    // Get published events for landing page
+    getPublishedEvents: builder.query<EventsResponse, void>({
+      query: () => '/events/',
+      transformResponse: (response: any) => {
+        console.log('Published Events API response:', response);
+        // Handle the actual API response structure: { status, message, data: [...] }
+        if (response && response.data && Array.isArray(response.data)) {
+          return {
+            count: response.data.length,
+            next: null,
+            previous: null,
+            results: response.data,
+          } as EventsResponse;
+        }
+        // Handle paginated response: { count, results: [...] }
+        if (response && response.count !== undefined && response.results !== undefined) {
+          return response as EventsResponse;
+        }
+        // Handle direct array response
+        if (Array.isArray(response)) {
+          return {
+            count: response.length,
+            next: null,
+            previous: null,
+            results: response,
+          } as EventsResponse;
+        }
+        return {
+          count: 0,
+          next: null,
+          previous: null,
+          results: [],
+        } as EventsResponse;
+      },
+      providesTags: [{ type: 'Event', id: 'PUBLISHED' }],
     }),
 
     // Venues
@@ -424,33 +730,10 @@ export const organizerApi = createApi({
       invalidatesTags: (result, error, id) => [{ type: 'Venue', id }, { type: 'Venue', id: 'LIST' }],
     }),
 
-    approveEvent: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/events/moderator/${id}/approve_event/`,
-        method: 'POST',
-      }),
-      invalidatesTags: (result, error, id) => [{ type: 'Event', id }, { type: 'Event', id: 'LIST' }],
-    }),
-    
-    submitEventForApproval: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/events/${id}/submit_for_approval/`,
-        method: 'POST',
-      }),
-      invalidatesTags: (result, error, id) => [{ type: 'Event', id }, { type: 'Event', id: 'LIST' }],
-    }),
-    
-    rejectEvent: builder.mutation<void, { id: number; reason?: string }>({
-      query: ({ id, reason }) => ({
-        url: `/events/moderator/${id}/reject_event/`,
-        method: 'POST',
-        body: { reason: reason || 'Event rejected' },
-      }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Event', id }, { type: 'Event', id: 'LIST' }],
-    }),
+
 
     // Categories
-    getCategories: builder.query<CategoriesResponse, void>({
+    getCategories: builder.query<any, void>({
       query: () => '/categories/',
       transformResponse: (response: any) => {
         // Handle the expected paginated response structure
@@ -493,37 +776,6 @@ export const organizerApi = createApi({
               { type: 'Category', id: 'LIST' },
             ]
           : [{ type: 'Category', id: 'LIST' }],
-    }),
-
-    createCategory: builder.mutation<Category, CreateCategoryData>({
-      query: (data) => ({
-        url: '/categories/',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: [{ type: 'Category', id: 'LIST' }],
-    }),
-
-    updateCategory: builder.mutation<Category, { id: number; data: Partial<CreateCategoryData> }>({
-      query: ({ id, data }) => ({
-        url: `/categories/${id}/`,
-        method: 'PUT',
-        body: data,
-      }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Category', id }, { type: 'Category', id: 'LIST' }],
-    }),
-
-    getCategoryDetails: builder.query<Category, number>({
-      query: (id) => `/categories/${id}/`,
-      providesTags: (result, error, id) => [{ type: 'Category', id }],
-    }),
-
-    deleteCategory: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/categories/${id}/`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (result, error, id) => [{ type: 'Category', id }, { type: 'Category', id: 'LIST' }],
     }),
 
     // Tags
@@ -581,6 +833,92 @@ export const organizerApi = createApi({
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Tag', id }, { type: 'Tag', id: 'LIST' }],
     }),
+
+    // Ticket Types
+    getTicketTypes: builder.query<any, number>({
+      query: (eventId) => `/events/${eventId}/ticket-types/`,
+      transformResponse: (response: any) => {
+        console.log('Ticket Types API response:', response);
+        // Handle the actual API response structure: { status, message, data: [...] }
+        if (response && response.data && Array.isArray(response.data)) {
+          return {
+            count: response.data.length,
+            results: response.data,
+          };
+        }
+        // Handle paginated response: { count, results: [...] }
+        if (response && response.count !== undefined && response.results !== undefined) {
+          return response;
+        }
+        // Handle direct array response
+        if (Array.isArray(response)) {
+          return {
+            count: response.length,
+            results: response,
+          };
+        }
+        return {
+          count: 0,
+          results: [],
+        };
+      },
+      providesTags: [{ type: 'TicketType', id: 'LIST' }],
+    }),
+
+    createTicketType: builder.mutation<TicketType, { eventId: number; data: CreateTicketTypeData }>({
+      query: ({ eventId, data }) => ({
+        url: `/events/${eventId}/ticket-types/`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: [{ type: 'TicketType', id: 'LIST' }],
+    }),
+
+    deleteTicketType: builder.mutation<void, { eventId: number; ticketId: number }>({
+      query: ({ eventId, ticketId }) => ({
+        url: `/events/${eventId}/ticket-types/${ticketId}/`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: 'TicketType', id: 'LIST' }],
+    }),
+
+    getTicketTypeDetails: builder.query<TicketType, { eventId: number; ticketId: number }>({
+      query: ({ eventId, ticketId }) => `/events/${eventId}/ticket-types/${ticketId}/`,
+      providesTags: (result, error, { ticketId }) => [{ type: 'TicketType', id: ticketId }],
+    }),
+
+    updateTicketType: builder.mutation<TicketType, { eventId: number; ticketId: number; data: Partial<CreateTicketTypeData> }>({
+      query: ({ eventId, ticketId, data }) => ({
+        url: `/events/${eventId}/ticket-types/${ticketId}/`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { ticketId }) => [{ type: 'TicketType', id: ticketId }, { type: 'TicketType', id: 'LIST' }],
+    }),
+
+    getEventSeatMap: builder.query<SeatMapResponse, number>({
+      query: (eventId) => `/events/${eventId}/seat-map/`,
+      providesTags: (result, error, eventId) => [{ type: 'TicketType', id: `SEATMAP_${eventId}` }],
+    }),
+
+    getAvailableSeatsByTicketType: builder.query<SeatMapResponse, number>({
+      query: (eventId) => `/events/${eventId}/seat-map/available_by_ticket_type/`,
+      providesTags: (result, error, eventId) => [{ type: 'TicketType', id: `AVAILABLE_SEATS_${eventId}` }],
+    }),
+
+    createSeat: builder.mutation<Seat, { venueId: number; data: CreateSeatData }>({
+      query: ({ venueId, data }) => ({
+        url: `/venues/${venueId}/seats/`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: [{ type: 'Venue', id: 'LIST' }],
+    }),
+
+    getVenueSeats: builder.query<VenueSeatsResponse, number>({
+      query: (venueId) => `/venues/${venueId}/seats/`,
+      providesTags: (result, error, venueId) => [{ type: 'Venue', id: `SEATS_${venueId}` }],
+    }),
   }),
 });
 
@@ -590,14 +928,19 @@ export const {
   useUpdateEventMutation,
   useDeleteEventMutation,
   useGetEventStatsQuery,
+  useTestConnectionQuery,
   useGetVenuesQuery,
   useCreateVenueMutation,
   useGetVenueDetailsQuery,
   useUpdateVenueMutation,
   useDeleteVenueMutation,
-  useApproveEventMutation,
   useSubmitEventForApprovalMutation,
+  useGetModeratorEventsQuery,
+  useGetPendingEventsQuery,
+  useApproveEventMutation,
   useRejectEventMutation,
+  useGetApprovedEventsQuery,
+  useGetPublishedEventsQuery,
   useGetCategoriesQuery,
   useGetCategoryDetailsQuery,
   useCreateCategoryMutation,
@@ -606,6 +949,16 @@ export const {
   useGetTagsQuery,
   useCreateTagMutation,
   useDeleteTagMutation,
+  useGetTicketTypesQuery,
+  useCreateTicketTypeMutation,
+  useDeleteTicketTypeMutation,
+  useGetTicketTypeDetailsQuery,
+  useUpdateTicketTypeMutation,
+  useGetEventSeatMapQuery,
+  useGetAvailableSeatsByTicketTypeQuery,
+  useCreateSeatMutation,
+  useGetVenueSeatsQuery,
+  usePublishEventMutation,
 } = organizerApi;
 
 

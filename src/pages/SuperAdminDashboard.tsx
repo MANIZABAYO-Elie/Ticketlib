@@ -15,10 +15,12 @@ import {
   TrendingDown,
   Plus,
   ArrowLeft,
-  LogOut
+  LogOut,
+  Check,
+  X
 } from 'lucide-react';
 import { useCreateUserMutation, useGetUsersListQuery, useLogoutMutation } from '../app/authApi';
-import { useGetEventsQuery, useCreateEventMutation, useGetVenuesQuery, useCreateVenueMutation, useGetCategoriesQuery, useCreateCategoryMutation, useGetTagsQuery, useCreateTagMutation } from '../app/organizerApi';
+import { useGetEventsQuery, useCreateEventMutation, useGetVenuesQuery, useCreateVenueMutation, useGetTagsQuery, useCreateTagMutation, useCreateTicketTypeMutation, useGetApprovedEventsQuery, useGetPendingEventsQuery, useApproveEventMutation, useRejectEventMutation, useSubmitEventForApprovalMutation, usePublishEventMutation } from '../app/organizerApi';
 import { useGetAllQuery } from '../features/countries/countriesApi';
 import InputField from '../components/InputField';
 import SelectField from '../components/SelectField';
@@ -419,7 +421,7 @@ const UsersManagement: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Create User
@@ -613,7 +615,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ onSuccess, onCancel }) 
           <Button
             type="submit"
             disabled={isLoading}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-[#1558CC] transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Creating User...' : 'Create User'}
           </Button>
@@ -673,7 +675,7 @@ const VenuesManagement: React.FC = () => {
           </div>
           <Button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Create Venue
@@ -731,7 +733,7 @@ const VenuesManagement: React.FC = () => {
               <Button
                 type="submit"
                 disabled={creating}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-[#1558CC] transition-colors disabled:opacity-50"
               >
                 {creating ? 'Creating...' : 'Create Venue'}
               </Button>
@@ -820,7 +822,7 @@ const TagsManagement: React.FC = () => {
           <div className="text-sm text-gray-500">Total: {totalCount} tags</div>
           <Button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Tag
@@ -842,7 +844,7 @@ const TagsManagement: React.FC = () => {
             <Button
               type="submit"
               disabled={creating}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-[#1558CC] transition-colors disabled:opacity-50"
             >
               {creating ? 'Creating...' : 'Create'}
             </Button>
@@ -911,6 +913,199 @@ const TagsManagement: React.FC = () => {
   );
 };
 
+// Pending Events Management Component
+const PendingEventsManagement: React.FC = () => {
+  const { data: pendingEventsData, isLoading, error } = useGetPendingEventsQuery();
+  const [approveEvent, { isLoading: approving }] = useApproveEventMutation();
+  const [rejectEvent, { isLoading: rejecting }] = useRejectEventMutation();
+  
+  const handleApprove = async (eventId: number) => {
+    try {
+      await approveEvent(eventId).unwrap();
+    } catch (error) {
+      console.error('Failed to approve event:', error);
+    }
+  };
+
+  const handleReject = async (eventId: number) => {
+    try {
+      await rejectEvent({ id: eventId, reason: 'Event rejected by admin' }).unwrap();
+    } catch (error) {
+      console.error('Failed to reject event:', error);
+    }
+  };
+  
+  if (isLoading) return <div className="text-center py-4">Loading pending events...</div>;
+  if (error) return <div className="text-red-600 text-center py-4">Error loading pending events</div>;
+  
+  const pendingEvents = pendingEventsData?.results || [];
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Pending Events</h1>
+        <div className="text-sm text-gray-500">
+          Total: {pendingEvents.length} pending events
+        </div>
+      </div>
+      
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {pendingEvents.map((event: any) => (
+                <tr key={event.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      {event.banner_image && (
+                        <img 
+                          src={event.banner_image} 
+                          alt={event.title}
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{event.title}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">{event.description}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {event.organizer_name || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{event.venue?.name || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{event.venue?.city}, {event.venue?.country}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {event.start_datetime ? new Date(event.start_datetime).toLocaleDateString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleApprove(event.id)}
+                        disabled={approving || rejecting}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50"
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(event.id)}
+                        disabled={approving || rejecting}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {pendingEvents.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No pending events</h3>
+            <p className="text-gray-500">Events awaiting approval will appear here</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Approved Events Management Component
+const ApprovedEventsManagement: React.FC = () => {
+  const { data: approvedEventsData, isLoading, error } = useGetApprovedEventsQuery();
+  
+  if (isLoading) return <div className="text-center py-4">Loading approved events...</div>;
+  if (error) return <div className="text-red-600 text-center py-4">Error loading approved events</div>;
+  
+  const approvedEvents = approvedEventsData?.results || [];
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Approved Events</h1>
+        <div className="text-sm text-gray-500">
+          Total: {approvedEvents.length} approved events
+        </div>
+      </div>
+      
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {approvedEvents.map((event: any) => (
+                <tr key={event.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      {event.banner_image && (
+                        <img 
+                          src={event.banner_image} 
+                          alt={event.title}
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{event.title}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">{event.description}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {event.organizer_name || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{event.venue?.name || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{event.venue?.city}, {event.venue?.country}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {event.start_datetime ? new Date(event.start_datetime).toLocaleDateString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {event.approved_at ? new Date(event.approved_at).toLocaleDateString() : 'N/A'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {approvedEvents.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No approved events</h3>
+            <p className="text-gray-500">Approved events will appear here</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Categories Management Component
 const CategoriesManagement: React.FC = () => {
   const { data: categoriesData, isLoading, error } = useGetCategoriesQuery();
@@ -955,7 +1150,7 @@ const CategoriesManagement: React.FC = () => {
           </div>
           <Button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Category
@@ -989,7 +1184,7 @@ const CategoriesManagement: React.FC = () => {
               <Button
                 type="submit"
                 disabled={creating}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-[#1558CC] transition-colors disabled:opacity-50"
               >
                 {creating ? 'Creating...' : 'Create Category'}
               </Button>
@@ -1062,16 +1257,192 @@ const CategoriesManagement: React.FC = () => {
   );
 };
 
+// Ticket Types Management Component
+const TicketTypesManagement: React.FC = () => {
+  const { data: eventsData } = useGetEventsQuery();
+  const [createTicketType, { isLoading: creating }] = useCreateTicketTypeMutation();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    quantity_available: '',
+    sale_start: '',
+    sale_end: '',
+  });
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEventId) return;
+    
+    try {
+      await createTicketType({
+        eventId: selectedEventId,
+        data: {
+          name: formData.name,
+          description: formData.description,
+          price: formData.price,
+          quantity_available: parseInt(formData.quantity_available),
+          sale_start: formData.sale_start,
+          sale_end: formData.sale_end,
+        }
+      }).unwrap();
+      
+      setFormData({ name: '', description: '', price: '', quantity_available: '', sale_start: '', sale_end: '' });
+      setSelectedEventId(null);
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error('Failed to create ticket type:', error);
+    }
+  };
+  
+  const events = eventsData?.results || [];
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Ticket Types Management</h1>
+        <Button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Create Ticket Type
+        </Button>
+      </div>
+      
+      {showCreateForm && (
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+          <h3 className="text-lg font-semibold mb-4">Create New Ticket Type</h3>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
+              <select
+                value={selectedEventId || ''}
+                onChange={(e) => setSelectedEventId(Number(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select an Event</option>
+                {events.map((event: any) => (
+                  <option key={event.id} value={event.id}>
+                    {event.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <InputField
+              name="name"
+              placeholder="Ticket Type Name (e.g., VIP, General)"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
+            <InputField
+              name="price"
+              placeholder="Price (e.g., 99.99)"
+              value={formData.price}
+              onChange={handleInputChange}
+              required
+            />
+            <InputField
+              type="number"
+              name="quantity_available"
+              placeholder="Available Quantity"
+              value={formData.quantity_available}
+              onChange={handleInputChange}
+              required
+            />
+            <InputField
+              type="datetime-local"
+              name="sale_start"
+              placeholder="Sale Start Date"
+              value={formData.sale_start}
+              onChange={handleInputChange}
+              required
+            />
+            <InputField
+              type="datetime-local"
+              name="sale_end"
+              placeholder="Sale End Date"
+              value={formData.sale_end}
+              onChange={handleInputChange}
+              required
+            />
+            <div className="md:col-span-2">
+              <textarea
+                name="description"
+                placeholder="Ticket Description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500"
+                rows={3}
+                required
+              />
+            </div>
+            <div className="md:col-span-2 flex gap-2">
+              <Button
+                type="submit"
+                disabled={creating}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-[#1558CC] transition-colors disabled:opacity-50"
+              >
+                {creating ? 'Creating...' : 'Create Ticket Type'}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+      
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <p className="text-gray-600 text-center">Ticket types will be displayed here after creation.</p>
+      </div>
+    </div>
+  );
+};
+
 // Events Management Component
 const EventsManagement: React.FC = () => {
+  const [submitForApproval] = useSubmitEventForApprovalMutation();
+  const [publishEvent] = usePublishEventMutation();
+  
+  const handleSubmitForApproval = async (eventId: number) => {
+    try {
+      await submitForApproval(eventId).unwrap();
+    } catch (error) {
+      console.error('Failed to submit for approval:', error);
+    }
+  };
+
+  const handlePublishEvent = async (eventId: number) => {
+    try {
+      await publishEvent(eventId).unwrap();
+    } catch (error) {
+      console.error('Failed to publish event:', error);
+    }
+  };
   const { data: eventsData, isLoading, error, refetch } = useGetEventsQuery();
   const { data: venues } = useGetVenuesQuery();
+  const { data: tagsData } = useGetTagsQuery();
   const [createEvent, { isLoading: creating }] = useCreateEventMutation();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     venue: '',
+    category: '',
+
     start_datetime: '',
     end_datetime: '',
   });
@@ -1088,6 +1459,8 @@ const EventsManagement: React.FC = () => {
       eventData.append('title', formData.title);
       eventData.append('description', formData.description);
       eventData.append('venue', formData.venue);
+      eventData.append('category', formData.category);
+
       eventData.append('start_datetime', formData.start_datetime);
       eventData.append('end_datetime', formData.end_datetime);
       if (bannerFile) {
@@ -1095,7 +1468,7 @@ const EventsManagement: React.FC = () => {
       }
       
       await createEvent(eventData as any).unwrap();
-      setFormData({ title: '', description: '', venue: '', start_datetime: '', end_datetime: '' });
+      setFormData({ title: '', description: '', venue: '', category: '', start_datetime: '', end_datetime: '' });
       setBannerFile(null);
       setShowCreateForm(false);
     } catch (error) {
@@ -1118,7 +1491,7 @@ const EventsManagement: React.FC = () => {
           </div>
           <Button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-[#1558CC] transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Create Event
@@ -1147,11 +1520,31 @@ const EventsManagement: React.FC = () => {
                 required
               >
                 <option value="">Select Venue</option>
-                {venues.map((venue: any) => (
+                {venues?.data?.map((venue: any) => (
                   <option key={venue.id} value={venue.id}>
                     {venue.name} - {venue.city}, {venue.country}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Category</option>
+                <option value="concert">Concert</option>
+                <option value="conference">Conference</option>
+                <option value="sports">Sports</option>
+                <option value="festival">Festival</option>
+                <option value="theater">Theater</option>
+                <option value="workshop">Workshop</option>
+                <option value="exhibition">Exhibition</option>
+                <option value="other">Other</option>
               </select>
             </div>
             <InputField
@@ -1170,6 +1563,7 @@ const EventsManagement: React.FC = () => {
               onChange={handleInputChange}
               required
             />
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
               <input
@@ -1200,7 +1594,7 @@ const EventsManagement: React.FC = () => {
               <Button
                 type="submit"
                 disabled={creating}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-[#1558CC] transition-colors disabled:opacity-50"
               >
                 {creating ? 'Creating...' : 'Create Event'}
               </Button>
@@ -1226,7 +1620,7 @@ const EventsManagement: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -1257,8 +1651,11 @@ const EventsManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       event.status === 'published' ? 'bg-green-100 text-green-800' :
-                      event.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                      event.status === 'approved' ? 'bg-blue-100 text-blue-800' :
+                      event.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      event.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      event.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {event.status}
                     </span>
@@ -1266,8 +1663,23 @@ const EventsManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {event.organizer_name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {event.is_featured ? '⭐ Yes' : 'No'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {event.status === 'draft' && (
+                      <button
+                        onClick={() => handleSubmitForApproval(event.id)}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        Submit for Approval
+                      </button>
+                    )}
+                    {event.status === 'approved' && (
+                      <button
+                        onClick={() => handlePublishEvent(event.id)}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200"
+                      >
+                        Publish
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -1289,15 +1701,16 @@ const SuperAdminDashboard: React.FC = () => {
   // Fetch real data
   const { data: usersData } = useGetUsersListQuery();
   const { data: eventsData } = useGetEventsQuery();
+  const { data: approvedEventsData } = useGetApprovedEventsQuery();
   const { data: venuesData } = useGetVenuesQuery();
-  const { data: categoriesData } = useGetCategoriesQuery();
   const { data: tagsData } = useGetTagsQuery();
   
   // Calculate real stats
   const totalUsers = usersData?.data?.length || usersData?.length || 0;
   const totalEvents = eventsData?.count || eventsData?.results?.length || 0;
+  const totalApprovedEvents = approvedEventsData?.count || approvedEventsData?.results?.length || 0;
   const totalVenues = venuesData?.data?.length || 0;
-  const totalCategories = categoriesData?.count || 0;
+  const totalCategories = 0;
   const totalTags = tagsData?.count || 0;
 
   const handleLogout = async () => {
@@ -1316,13 +1729,14 @@ const SuperAdminDashboard: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: 'Categories', icon: <Calendar className="w-5 h-5" /> },
-    { name: 'Tags', icon: <Calendar className="w-5 h-5" /> },
+    { name: 'Users', icon: <Users className="w-5 h-5" /> },
     { name: 'Events', icon: <Calendar className="w-5 h-5" /> },
+    { name: 'Pending Events', icon: <Calendar className="w-5 h-5" /> },
+    { name: 'Approved Events', icon: <Calendar className="w-5 h-5" /> },
     { name: 'Venues', icon: <Ticket className="w-5 h-5" /> },
+    { name: 'Tags', icon: <Calendar className="w-5 h-5" /> },
     { name: 'Tickets', icon: <Ticket className="w-5 h-5" /> },
     { name: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
-    { name: 'Users', icon: <Users className="w-5 h-5" /> },
     { name: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
@@ -1340,7 +1754,7 @@ const SuperAdminDashboard: React.FC = () => {
     { title: 'Total Venues', value: totalVenues.toString(), change: '+15.3%', isPositive: true },
     { title: 'Total Categories', value: totalCategories.toString(), change: '+3.2%', isPositive: true },
     { title: 'Total Tags', value: totalTags.toString(), change: '+5.1%', isPositive: true },
-    { title: 'Active Events', value: (eventsData?.results?.filter((e: any) => e.status === 'published')?.length || 0).toString(), change: '+2.5%', isPositive: true },
+    { title: 'Published Events', value: (eventsData?.results?.filter((e: any) => e.status === 'published')?.length || 0).toString(), change: '+2.5%', isPositive: true },
   ];
 
   const barChartData: ChartDataPoint[] = [
@@ -1396,32 +1810,15 @@ const SuperAdminDashboard: React.FC = () => {
             </>
           )}
           
-          {activeMenu === 'Users' && (
-            <UsersManagement />
-          )}
+          {activeMenu === 'Users' && <UsersManagement />}
+          {activeMenu === 'Events' && <EventsManagement key={activeMenu} />}
+          {activeMenu === 'Pending Events' && <PendingEventsManagement />}
+          {activeMenu === 'Approved Events' && <ApprovedEventsManagement />}
+          {activeMenu === 'Venues' && <VenuesManagement />}
+          {activeMenu === 'Tags' && <TagsManagement />}
+          {activeMenu === 'Tickets' && <TicketTypesManagement />}
           
-          {activeMenu === 'Categories' && (
-            <CategoriesManagement />
-          )}
-          
-          {activeMenu === 'Tags' && (
-            <TagsManagement />
-          )}
-          
-          {activeMenu === 'Events' && (
-            <EventsManagement key={activeMenu} />
-          )}
-          
-          {activeMenu === 'Venues' && (
-            <VenuesManagement />
-          )}
-          
-          {activeMenu !== 'Dashboard' && activeMenu !== 'Users' && activeMenu !== 'Categories' && activeMenu !== 'Tags' && activeMenu !== 'Events' && activeMenu !== 'Venues' && (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">{activeMenu}</h2>
-              <p className="text-gray-600">This section is under development.</p>
-            </div>
-          )}
+      
         </main>
       </div>
     </div>

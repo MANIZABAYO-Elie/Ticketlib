@@ -83,13 +83,13 @@ export const superAdminApi = createApi({
   tagTypes: ['Event', 'Venue'],
   endpoints: (builder) => ({
     getAllEvents: builder.query<EventsResponse, void>({
-      query: () => '/api/events/events/',
+      query: () => '/events/events/',
       providesTags: ['Event'],
     }),
     
     createEvent: builder.mutation<Event, CreateEventData>({
       query: (data) => ({
-        url: '/api/events/events/',
+        url: '/events/',
         method: 'POST',
         body: data,
       }),
@@ -98,7 +98,7 @@ export const superAdminApi = createApi({
     
     createVenue: builder.mutation<Venue, CreateVenueData>({
       query: (data) => ({
-        url: '/api/events/venues/',
+        url: '/venues/',
         method: 'POST',
         body: data,
       }),
@@ -106,7 +106,7 @@ export const superAdminApi = createApi({
     }),
     
     getVenues: builder.query<Venue[], void>({
-      query: () => '/api/events/venues/',
+      query: () => '/venues/',
       providesTags: ['Venue'],
     }),
   }),

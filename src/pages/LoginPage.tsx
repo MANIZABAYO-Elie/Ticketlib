@@ -76,8 +76,9 @@ const LoginPage: React.FC = () => {
           redirectPath = "/admin-dashboard";
         } else if (userRole === "organizer") {
           redirectPath = "/organizer-dashboard";
+        } else if (userRole === "moderator") {
+          redirectPath = "/moderator-dashboard";
         }
-        
         console.log('Redirecting to:', redirectPath);
         navigate(redirectPath);
       }

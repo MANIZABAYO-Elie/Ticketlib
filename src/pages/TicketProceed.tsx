@@ -67,10 +67,32 @@ const TicketProceed: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      console.log('Form submitted:', formData);
-      alert('Proceeding to checkout...');
+      try {
+        // Get seat selection data
+        const seatSelection = localStorage.getItem('seat_selection');
+        const selectedTicket = JSON.parse(localStorage.getItem('selected_ticket') || '{}');
+        
+        if (seatSelection) {
+          const seatData = JSON.parse(seatSelection);
+          
+          // Store complete cart data for checkout display
+          localStorage.setItem('cart_data', JSON.stringify({
+            event: selectedTicket.eventTitle || 'Event',
+            eventId: selectedTicket.eventId || 1,
+            seatInfo: seatData,
+            holderInfo: formData,
+            total: seatData.price
+          }));
+          
+          // Navigate to checkout page
+          window.location.href = '/checkout';
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        alert('Error adding to cart. Please try again.');
+      }
     }
   };
 
@@ -90,7 +112,7 @@ const TicketProceed: React.FC = () => {
 
             {/* Centered Title */}
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 text-center">
-              Ticket Holder Info
+              Ticket Holder Information
             </h1>
           </div>
         </div>
@@ -101,7 +123,7 @@ const TicketProceed: React.FC = () => {
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8 sm:mb-12">
             <p className="text-lg sm:text-xl md:text-2xl text-gray-700">
-              Please provide your full name and email
+              Please provide your information for the ticket
             </p>
           </div>
 

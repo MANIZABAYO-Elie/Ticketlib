@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Ticket, Info } from 'lucide-react';
+import SeatMapSelection from '../components/SeatMapSelection';
 
-interface Category {
+// Ticketing System Types
+export type CategoryName = 'Regular' | 'VIP' | 'VVIP';
+
+export interface Category {
   id: number;
-  name: string;
+  name: CategoryName;
   price: number;
   available: boolean;
-  color: 'teal' | 'gray' | 'blue' | 'red' | 'purple';
+  color: string;
+}
+
+export interface BlockCategory {
+  block: string;
+  category: CategoryName;
+  seatsPerBlock: number;
 }
 
 interface Seat {
@@ -16,57 +27,101 @@ interface Seat {
   status: 'available' | 'unavailable';
 }
 
-interface VenueBlocks {
-  upperLevel: string[];
-  middleLevel: string[];
-  lowerMiddle: string[];
-  bottomLevel: string[];
-  vipLevel: string[];
-  bottomSeats: string[];
-}
-
 const TicketBookingSystem: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [showSeatMap, setShowSeatMap] = useState(false);
+  
+  // Get selected ticket data from localStorage
+  const selectedTicket = JSON.parse(localStorage.getItem('selected_ticket') || '{}');
+  const [quantity, setQuantity] = useState(1);
+  
+  // Don't auto-select category - let user choose after terms
 
+  // Categories with exact pricing
   const categories: Category[] = [
-    { id: 1, name: 'BRONZE', price: 15000, available: true, color: 'teal' },
-    { id: 2, name: 'FLOOR STANDING', price: 25000, available: false, color: 'gray' },
-    { id: 3, name: 'SILVER', price: 30000, available: true, color: 'gray' },
-    { id: 4, name: 'PREMIUM', price: 50000, available: true, color: 'blue' },
-    { id: 5, name: 'VIP', price: 100000, available: true, color: 'red' },
-    { id: 6, name: 'GOLDEN CIRCLE', price: 100000, available: true, color: 'purple' }
+    { id: 1, name: 'Regular', price: 5000, available: true, color: 'teal' },
+    { id: 2, name: 'VIP', price: 30000, available: true, color: 'blue' },
+    { id: 3, name: 'VVIP', price: 60000, available: true, color: 'red' }
   ];
 
-  const venueBlocks: VenueBlocks = {
-    upperLevel: ['205', '206', '207', '208', '209', '210', '211'],
-    middleLevel: ['204', 'P4', '104', '103', '105', '106', 'P6', '107', '108', 'P6', '109', '110'],
-    lowerMiddle: ['203', 'P3', '102', '101', '120', '119', '118', '117', '116', '115'],
-    bottomLevel: ['202', 'P2', '122', 'P1', '121'],
-    vipLevel: ['VIP10', 'VIP9', 'VIP8', 'VIP7', 'VIP6', 'VIP5', 'VIP4', 'VIP3', 'VIP2', 'VIP1'],
-    bottomSeats: ['222', '221', '220', '219', '218', '217', '216']
+  // Block assignments with exact seat totals
+  const blockCategories: BlockCategory[] = [
+    // Regular blocks - 5,000 total seats
+    { block: 'A1', category: 'Regular', seatsPerBlock: 500 },
+    { block: 'A2', category: 'Regular', seatsPerBlock: 500 },
+    { block: 'A3', category: 'Regular', seatsPerBlock: 500 },
+    { block: 'B1', category: 'Regular', seatsPerBlock: 600 },
+    { block: 'B2', category: 'Regular', seatsPerBlock: 600 },
+    { block: 'B3', category: 'Regular', seatsPerBlock: 600 },
+    { block: 'C1', category: 'Regular', seatsPerBlock: 400 },
+    { block: 'C2', category: 'Regular', seatsPerBlock: 400 },
+    { block: 'C3', category: 'Regular', seatsPerBlock: 400 },
+    { block: 'D1', category: 'Regular', seatsPerBlock: 300 },
+    { block: 'D2', category: 'Regular', seatsPerBlock: 300 },
+    { block: 'D3', category: 'Regular', seatsPerBlock: 300 },
+    { block: 'E1', category: 'Regular', seatsPerBlock: 200 },
+    { block: 'E2', category: 'Regular', seatsPerBlock: 200 },
+    { block: 'E3', category: 'Regular', seatsPerBlock: 200 },
+    { block: 'STANDING1', category: 'Regular', seatsPerBlock: 0 },
+
+    // VIP blocks - 3,000 total seats
+    { block: 'VIP1', category: 'VIP', seatsPerBlock: 400 },
+    { block: 'VIP2', category: 'VIP', seatsPerBlock: 400 },
+    { block: 'VIP3', category: 'VIP', seatsPerBlock: 400 },
+    { block: 'VIP4', category: 'VIP', seatsPerBlock: 350 },
+    { block: 'VIP5', category: 'VIP', seatsPerBlock: 350 },
+    { block: 'VIP6', category: 'VIP', seatsPerBlock: 350 },
+    { block: 'VIP7', category: 'VIP', seatsPerBlock: 250 },
+    { block: 'VIP8', category: 'VIP', seatsPerBlock: 250 },
+    { block: 'VIP9', category: 'VIP', seatsPerBlock: 250 },
+    { block: 'VIP_PREMIUM', category: 'VIP', seatsPerBlock: 0 },
+
+    // VVIP blocks - 2,000 total seats
+    { block: 'VVIP1', category: 'VVIP', seatsPerBlock: 300 },
+    { block: 'VVIP2', category: 'VVIP', seatsPerBlock: 300 },
+    { block: 'VVIP3', category: 'VVIP', seatsPerBlock: 300 },
+    { block: 'VVIP4', category: 'VVIP', seatsPerBlock: 250 },
+    { block: 'VVIP5', category: 'VVIP', seatsPerBlock: 250 },
+    { block: 'VVIP6', category: 'VVIP', seatsPerBlock: 200 },
+    { block: 'VVIP7', category: 'VVIP', seatsPerBlock: 200 },
+    { block: 'VVIP8', category: 'VVIP', seatsPerBlock: 200 },
+    { block: 'VVIP_SUITE', category: 'VVIP', seatsPerBlock: 0 }
+  ];
+
+  // Helper functions
+  const getCategoryTotals = (): Record<CategoryName, number> => {
+    const totals: Record<CategoryName, number> = { Regular: 0, VIP: 0, VVIP: 0 };
+    blockCategories.forEach(bc => {
+      totals[bc.category] += bc.seatsPerBlock;
+    });
+    return totals;
   };
 
+  const getBlocksByCategory = (category: CategoryName): BlockCategory[] => {
+    return blockCategories.filter(bc => bc.category === category);
+  };
+
+  const getTotalSeats = (): number => {
+    return blockCategories.reduce((sum, bc) => sum + bc.seatsPerBlock, 0);
+  };
+
+  // Get category totals for display
+  const categoryTotals = getCategoryTotals();
+
   const generateSeats = (): Seat[] => {
-    const rows: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-    const seatsPerRow: Record<string, number> = {
-      'A': 17, 'B': 17, 'C': 15, 'D': 14, 'E': 12, 'F': 12, 'G': 14, 'H': 14, 'I': 15
-    };
-    
     const seats: Seat[] = [];
-    rows.forEach(row => {
-      const numSeats = seatsPerRow[row];
-      for (let i = 1; i <= numSeats; i++) {
-        const isUnavailable = Math.random() > 0.7;
-        seats.push({
-          id: `${row}${i}`,
-          row,
-          number: i,
-          status: isUnavailable ? 'unavailable' : 'available'
-        });
-      }
-    });
+    // Generate 20 seats - all available
+    for (let i = 1; i <= 20; i++) {
+      seats.push({
+        id: `S${i}`,
+        row: 'S',
+        number: i,
+        status: 'available'
+      });
+    }
     return seats;
   };
 
@@ -86,6 +141,7 @@ const TicketBookingSystem: React.FC = () => {
   const handleCategorySelect = (category: Category): void => {
     if (category.available) {
       setSelectedCategory(category);
+      setShowSeatMap(true);
     }
   };
 
@@ -97,16 +153,25 @@ const TicketBookingSystem: React.FC = () => {
 
   const totalPrice: number = selectedSeats.length * (selectedCategory?.price || 0);
 
-  const getColorClass = (color: Category['color']): string => {
-    const colorMap: Record<Category['color'], string> = {
-      'teal': 'text-teal-500',
-      'blue': 'text-blue-600',
-      'red': 'text-red-600',
-      'purple': 'text-purple-600',
-      'gray': 'text-gray-400'
-    };
-    return colorMap[color];
+  const handleAddToCart = (seatInfo: any, holderInfo: any) => {
+    // Store seat selection data for ticket-proceed page
+    localStorage.setItem('seat_selection', JSON.stringify(seatInfo));
+    navigate('/ticket-proceed');
   };
+
+  if (showSeatMap && selectedCategory) {
+    return (
+      <SeatMapSelection
+        eventTitle={selectedTicket.eventTitle || 'Event'}
+        ticketType={selectedCategory.name}
+        price={selectedCategory.price}
+        onBack={() => setShowSeatMap(false)}
+        onAddToCart={handleAddToCart}
+      />
+    );
+  }
+
+
 
   if (selectedBlock && selectedCategory) {
     return (
@@ -124,29 +189,24 @@ const TicketBookingSystem: React.FC = () => {
             <p className="text-gray-500 text-center mb-6">Please select any seat you want in this section to continue.</p>
             
             <div className="mb-6">
-              <p className="text-center text-gray-600 mb-4">FRONT VIEW</p>
-              <div className="space-y-2">
-                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].map(row => (
-                  <div key={row} className="flex items-center justify-center gap-1">
-                    <span className="w-8 text-center font-semibold text-gray-700">{row}</span>
-                    <div className="flex gap-1 flex-wrap justify-center">
-                      {seats.filter(s => s.row === row).map(seat => (
-                        <button
-                          key={seat.id}
-                          onClick={() => handleSeatClick(seat.id)}
-                          disabled={seat.status === 'unavailable'}
-                          className={`w-8 h-8 rounded ${
-                            selectedSeats.includes(seat.id)
-                              ? 'bg-green-500'
-                              : seat.status === 'unavailable'
-                              ? 'bg-gray-300 cursor-not-allowed'
-                              : 'bg-blue-600 hover:bg-blue-700'
-                          } transition-colors`}
-                          title={seat.id}
-                        />
-                      ))}
-                    </div>
-                  </div>
+              <p className="text-center text-gray-600 mb-4">ICYAMBU 4TH EDITION - VIP SEATING</p>
+              <div className="grid grid-cols-5 gap-3 max-w-md mx-auto">
+                {seats.map(seat => (
+                  <button
+                    key={seat.id}
+                    onClick={() => handleSeatClick(seat.id)}
+                    disabled={seat.status === 'unavailable'}
+                    className={`w-12 h-12 rounded-lg font-semibold transition-colors ${
+                      selectedSeats.includes(seat.id)
+                        ? 'bg-green-500 text-white'
+                        : seat.status === 'unavailable'
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    title={`Seat ${seat.number}`}
+                  >
+                    {seat.number}
+                  </button>
                 ))}
               </div>
             </div>
@@ -184,7 +244,21 @@ const TicketBookingSystem: React.FC = () => {
             </div>
 
             {selectedSeats.length > 0 && (
-              <button className="w-full mt-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+              <button 
+                onClick={() => {
+                  // Store Icyambu selection data
+                  localStorage.setItem('icyambu_selection', JSON.stringify({
+                    event: selectedTicket.eventTitle || 'Event',
+                    eventId: selectedTicket.eventId,
+                    seats: selectedSeats.map(id => parseInt(id.replace('S', ''))),
+                    ticketType: selectedCategory?.name || selectedTicket.ticketType,
+                    pricePerTicket: selectedCategory?.price || ticketPrice,
+                    total: selectedSeats.length * (selectedCategory?.price || ticketPrice)
+                  }));
+                  navigate('/ticket-proceed');
+                }}
+                className="w-full mt-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
                 <span>Proceed</span>
               </button>
             )}
@@ -202,121 +276,85 @@ const TicketBookingSystem: React.FC = () => {
           <h2 className="text-2xl font-bold mb-6">Venue Layout</h2>
           
           <div className="relative bg-gray-100 rounded-2xl p-8">
-            {/* Upper Level */}
-            <div className="flex justify-center gap-2 mb-4">
-              {venueBlocks.upperLevel.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className="w-16 h-16 bg-gray-300 rounded text-xs font-semibold hover:bg-gray-400 transition-colors"
-                >
-                  {block}
-                </button>
-              ))}
-            </div>
-
-            {/* Middle Level */}
-            <div className="flex justify-center gap-2 mb-4 flex-wrap">
-              {venueBlocks.middleLevel.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className={`w-14 h-14 rounded text-xs font-semibold transition-colors ${
-                    block.startsWith('P') 
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                >
-                  {block}
-                </button>
-              ))}
-            </div>
-
-            {/* Stage */}
-            <div className="flex justify-center mb-4">
-              <div className="flex gap-4 items-center">
-                <div className="w-96 h-32 bg-amber-200 rounded flex items-center justify-center">
-                  <span className="text-lg font-bold">STAGE AREA</span>
-                </div>
-                <div className="w-24 h-32 bg-orange-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">STAGE</span>
-                </div>
+            {/* VVIP Level */}
+            <div className="mb-6">
+              <h3 className="text-center text-sm font-bold text-red-600 mb-2">VVIP Section</h3>
+              <div className="flex justify-center gap-2 flex-wrap">
+                {getBlocksByCategory('VVIP').map(block => (
+                  <button
+                    key={block.block}
+                    onClick={() => handleBlockSelect(block.block)}
+                    className="w-16 h-12 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition-colors"
+                    title={`${block.seatsPerBlock} seats`}
+                  >
+                    {block.block}
+                  </button>
+                ))}
               </div>
-            </div>
-
-            {/* Lower Middle */}
-            <div className="flex justify-center gap-2 mb-4 flex-wrap">
-              {venueBlocks.lowerMiddle.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className={`w-14 h-14 rounded text-xs font-semibold transition-colors ${
-                    block.startsWith('P') 
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                >
-                  {block}
-                </button>
-              ))}
-            </div>
-
-            {/* Bottom Level */}
-            <div className="flex justify-center gap-2 mb-4">
-              {venueBlocks.bottomLevel.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className={`w-14 h-14 rounded text-xs font-semibold transition-colors ${
-                    block.startsWith('P') 
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                >
-                  {block}
-                </button>
-              ))}
             </div>
 
             {/* VIP Level */}
-            <div className="flex justify-center gap-1 mb-4">
-              {venueBlocks.vipLevel.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className="w-12 h-8 bg-orange-600 rounded text-xs font-bold text-white hover:bg-orange-700 transition-colors"
-                >
-                  {block}
-                </button>
-              ))}
+            <div className="mb-6">
+              <h3 className="text-center text-sm font-bold text-blue-600 mb-2">VIP Section</h3>
+              <div className="flex justify-center gap-2 flex-wrap">
+                {getBlocksByCategory('VIP').map(block => (
+                  <button
+                    key={block.block}
+                    onClick={() => handleBlockSelect(block.block)}
+                    className="w-16 h-12 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition-colors"
+                    title={`${block.seatsPerBlock} seats`}
+                  >
+                    {block.block}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Bottom Seats */}
-            <div className="flex justify-center gap-2">
-              {venueBlocks.bottomSeats.map(block => (
-                <button
-                  key={block}
-                  onClick={() => handleBlockSelect(block)}
-                  className="w-16 h-16 bg-blue-700 rounded text-xs font-semibold text-white hover:bg-blue-800 transition-colors"
-                >
-                  {block}
-                </button>
-              ))}
+            {/* Stage */}
+            <div className="flex justify-center mb-6">
+              <div className="w-96 h-24 bg-amber-200 rounded flex items-center justify-center">
+                <span className="text-lg font-bold">STAGE</span>
+              </div>
+            </div>
+
+            {/* Regular Level */}
+            <div className="mb-6">
+              <h3 className="text-center text-sm font-bold text-teal-600 mb-2">Regular Section</h3>
+              <div className="grid grid-cols-8 gap-2 max-w-4xl mx-auto">
+                {getBlocksByCategory('Regular').map(block => (
+                  <button
+                    key={block.block}
+                    onClick={() => handleBlockSelect(block.block)}
+                    className={`h-12 rounded text-xs font-semibold transition-colors ${
+                      block.seatsPerBlock === 0 
+                        ? 'bg-teal-300 text-teal-800 hover:bg-teal-400'
+                        : 'bg-teal-600 text-white hover:bg-teal-700'
+                    }`}
+                    title={`${block.seatsPerBlock} seats`}
+                  >
+                    {block.block}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Legend */}
-            <div className="flex justify-center gap-4 mt-6 text-xs">
+            <div className="flex justify-center gap-6 mt-6 text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-400 rounded"></div>
-                <span>Blocks</span>
+                <div className="w-4 h-4 bg-red-600 rounded"></div>
+                <span>VVIP (RWF 60,000)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-700 rounded"></div>
-                <span>Highlighted</span>
+                <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                <span>VIP (RWF 30,000)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span>Selected</span>
+                <div className="w-4 h-4 bg-teal-600 rounded"></div>
+                <span>Regular (RWF 5,000)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-teal-300 rounded"></div>
+                <span>Standing/Premium</span>
               </div>
             </div>
           </div>
@@ -324,40 +362,48 @@ const TicketBookingSystem: React.FC = () => {
 
         {/* Ticket Categories */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-blue-700 mb-2">Ticket categories</h2>
-          <p className="text-sm text-gray-500 mb-6">Select a ticket category below to show available spots for purchase.</p>
+          <h2 className="text-2xl font-bold text-blue-700 mb-2">{selectedTicket.eventTitle || 'Event Tickets'}</h2>
+          <p className="text-sm text-gray-500 mb-2">Select your preferred seating category</p>
+          <p className="text-xs text-gray-400 mb-6">Total Seats: {getTotalSeats().toLocaleString()}</p>
           
           <div className="space-y-3">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => handleCategorySelect(category)}
-                disabled={!category.available}
-                className={`w-full p-4 rounded-lg border-2 transition-all ${
-                  selectedCategory?.id === category.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : category.available
-                    ? 'border-gray-200 hover:border-blue-300'
-                    : 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Ticket className={getColorClass(category.color)} />
-                    <div className="text-left">
-                      <div className="font-bold">{category.name}</div>
-                      <div className="text-sm text-gray-600">{category.price.toLocaleString()} Rwf</div>
+            {categories.map(category => {
+              const categoryTotal = categoryTotals[category.name];
+              const colorClass = category.color === 'teal' ? 'text-teal-500' : 
+                               category.color === 'blue' ? 'text-blue-600' : 'text-red-600';
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategorySelect(category)}
+                  disabled={!category.available}
+                  className={`w-full p-4 rounded-lg border-2 transition-all ${
+                    selectedCategory?.id === category.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : category.available
+                      ? 'border-gray-200 hover:border-blue-300'
+                      : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Ticket className={colorClass} />
+                      <div className="text-left">
+                        <div className="font-bold">{category.name}</div>
+                        <div className="text-sm text-gray-600">RWF {category.price.toLocaleString()}</div>
+                        <div className="text-xs text-gray-500">{categoryTotal.toLocaleString()} seats</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!category.available && (
+                        <span className="bg-red-400 text-white text-xs px-3 py-1 rounded">SOLD OUT</span>
+                      )}
+                      <Info className="text-gray-400" size={20} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!category.available && (
-                      <span className="bg-red-400 text-white text-xs px-3 py-1 rounded">SOLD OUT</span>
-                    )}
-                    <Info className="text-gray-400" size={20} />
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {selectedCategory && (
